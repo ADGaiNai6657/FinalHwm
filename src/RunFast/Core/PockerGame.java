@@ -6,9 +6,9 @@ import java.util.Random;
 
 public class PockerGame {
     static ArrayList<Card> list=new ArrayList<>();          //牌数组
-    static ArrayList<String> player1=new ArrayList<>();     //玩家数组
-    static ArrayList<String> player2=new ArrayList<>();
-    static ArrayList<String> player3=new ArrayList<>();
+    static ArrayList<Card> player1=new ArrayList<>();     //玩家数组
+    static ArrayList<Card> player2=new ArrayList<>();
+    static ArrayList<Card> player3=new ArrayList<>();
 
     //此静态代码块的目的是创建扑克牌对象供后续游戏使用
     static{
@@ -17,7 +17,7 @@ public class PockerGame {
 
         //随机数对象，为随机生成2与A花色
         Random random2 = new Random();
-        Random randomA=new Random();
+        Random randomA = new Random();
 
         //扑克牌创建并填入
         for (String s : color) {
@@ -52,13 +52,13 @@ public class PockerGame {
         //发牌
         for (int i = 0; i < list.size(); i++) {
             if(i%3==0){
-                player1.add(list.get(i).toString());
+                player1.add(list.get(i));
             }
             else if(i%3==1){
-                player2.add(list.get(i).toString());
+                player2.add(list.get(i));
             }
             else {
-                player3.add(list.get(i).toString());
+                player3.add(list.get(i));
             }
         }
 
