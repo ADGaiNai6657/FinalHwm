@@ -53,18 +53,20 @@ public class Card { //基础牌单位，包含花色与数字
     }
     public void setm_Number(String m_Number) {
         this.m_Number = m_Number;
+        this.m_Value = calculateValue(this.m_Number, this.m_Color);
     }
     public String getm_Color() {
         return m_Color;
     }
     public void setm_Color(String m_Color) {
         this.m_Color = m_Color;
+        this.m_Value = calculateValue(this.m_Number, this.m_Color);
     }
     public int getm_Value(){
         return m_Value;
     }
     public void setm_Value(int m_Value){
-        this.m_Value = calculateValue(this.m_Number, this.m_Color);
+        this.m_Value = m_Value;
     }
 
     @Override
