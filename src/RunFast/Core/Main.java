@@ -1,5 +1,6 @@
 package RunFast.Core;
 
+import RunFast.JFrame.LoginFrame;
 import javax.swing.SwingUtilities;
 
 public class Main {
