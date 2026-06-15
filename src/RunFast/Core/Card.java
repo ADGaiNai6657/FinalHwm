@@ -12,10 +12,12 @@ public class Card { //基础牌单位，包含花色与数字
     }
     public Card() {};
 
+    //牌价值计算，百位、十位为数字，个位为花色
     private int calculateValue(String number, String color) {
         return calculateNumberValue(number) * 10 + calculateColorValue(color);
     }
 
+    //牌价值具体取值，用于确定牌的排序。
     private int calculateNumberValue(String number) {
         switch (number) {
             case "J":
@@ -32,7 +34,6 @@ public class Card { //基础牌单位，包含花色与数字
                 return Integer.parseInt(number);
         }
     }
-
     private int calculateColorValue(String color) {
         switch (color) {
             case "♦":
@@ -73,6 +74,4 @@ public class Card { //基础牌单位，包含花色与数字
     public String toString() {
         return m_Number + m_Color;
     }
-
-
 }
