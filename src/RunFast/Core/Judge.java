@@ -22,6 +22,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
         int size = sortedCards.size();
         Map<Integer, Integer> counts = countRanks(sortedCards);
 
+        //单张、对子、三张、炸弹都属于所有牌点相同的基础牌型
         if (counts.size() == 1) {
             int rank = sortedCards.get(0).getRankValue();
             if (size == 1) {
@@ -38,27 +39,33 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             }
         }
 
+        //三带一：三张相同牌点再带一张单牌
         if (size == 4 && hasCount(counts, 3)) {
             return new CardPattern(CardPattern.Type.TRIPLE_WITH_ONE, rankWithCount(counts, 3), 1, size);
         }
 
+        //三带二：跑得快中允许三张相同牌点带任意两张单牌
         if (size == 5 && hasCount(counts, 3)) {
             return new CardPattern(CardPattern.Type.TRIPLE_WITH_PAIR, rankWithCount(counts, 3), 1, size);
         }
 
+        //四带二：四张相同牌点带任意两张单牌
         if (size == 6 && hasCount(counts, 4)) {
             return new CardPattern(CardPattern.Type.FOUR_WITH_TWO, rankWithCount(counts, 4), 1, size);
         }
 
+        //飞机和飞机带翅膀需要优先于顺子、连对判断
         CardPattern planePattern = judgePlane(counts, size);
         if (planePattern.isValid()) {
             return planePattern;
         }
 
+        //顺子至少五张，且不能包含2
         if (isStraight(counts, size)) {
             return new CardPattern(CardPattern.Type.STRAIGHT, maxRank(counts), size, size);
         }
 
+        //连对至少两对，且不能包含2
         if (isPairStraight(counts, size)) {
             return new CardPattern(CardPattern.Type.PAIR_STRAIGHT, maxRank(counts), size / 2, size);
         }
@@ -82,18 +89,21 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             return true;
         }
 
+        //炸弹可以压任意非炸弹牌型
         if (current.isBomb() && !last.isBomb()) {
             return true;
         }
         if (current.isBomb() != last.isBomb()) {
             return false;
         }
+        //非同类牌型不能互相压，炸弹例外已在上方处理
         if (current.getType() != last.getType()) {
             return false;
         }
         if (current.getCardCount() != last.getCardCount()) {
             return false;
         }
+        //顺子、连对、飞机等连续牌型必须长度相同才能比较
         if (current.getLength() != last.getLength()) {
             return false;
         }
@@ -116,6 +126,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             return findSmallestLead(hand);
         }
 
+        //没有牌权时，先尝试找同牌型能压过上一手的牌
         CardPattern lastPattern = judge(lastCards);
         if (!lastPattern.isValid()) {
             return findSmallestLead(hand);
@@ -126,6 +137,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             return sameTypeCards;
         }
 
+        //同牌型找不到时，非炸弹可以用炸弹压
         if (!lastPattern.isBomb()) {
             return findBombAbove(hand, 0);
         }
@@ -148,6 +160,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
 
     //此方法的目的是按上一手牌型寻找同牌型可压的牌
     private static ArrayList<Card> findSameTypeBeat(ArrayList<Card> hand, CardPattern lastPattern) {
+        //根据上一手牌型分发到对应的寻找方法
         switch (lastPattern.getType()) {
             case SINGLE:
                 return findSameRankGroup(hand, 1, lastPattern.getMainRank());
@@ -228,6 +241,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     //此方法的目的是寻找顺子
     private static ArrayList<Card> findStraight(ArrayList<Card> hand, int length, int minMainRank) {
         Map<Integer, ArrayList<Card>> byRank = groupByRank(hand);
+        //顺子从3开始查找，最大不能到2
         for (int start = 3; start <= 14 - length + 1; start++) {
             int end = start + length - 1;
             if (end <= minMainRank || end >= 15) {
@@ -252,6 +266,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     //此方法的目的是寻找连对
     private static ArrayList<Card> findPairStraight(ArrayList<Card> hand, int pairLength, int minMainRank) {
         Map<Integer, ArrayList<Card>> byRank = groupByRank(hand);
+        //连对从两对开始支持，比较时要求对数相同
         for (int start = 3; start <= 14 - pairLength + 1; start++) {
             int end = start + pairLength - 1;
             if (end <= minMainRank || end >= 15) {
@@ -276,6 +291,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     //此方法的目的是寻找飞机
     private static ArrayList<Card> findPlane(ArrayList<Card> hand, int length, int minMainRank) {
         Map<Integer, ArrayList<Card>> byRank = groupByRank(hand);
+        //飞机只取连续的三张组合，不允许2参与
         ArrayList<Integer> tripleRanks = ranksWithAtLeast(byRank, 3);
         ArrayList<Integer> sequence = findRankSequence(tripleRanks, length, minMainRank);
         if (sequence.isEmpty()) {
@@ -294,6 +310,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
         }
 
         HashSet<Integer> excludedRanks = new HashSet<>(sequence);
+        //翅膀不能从飞机本身的三张里拆出来
         ArrayList<Card> kickers = findKicker(hand, excludedRanks, length);
         if (kickers.size() != length) {
             return new ArrayList<>();
@@ -314,6 +331,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
         }
 
         ArrayList<Integer> pairRanks = new ArrayList<>();
+        //飞机带对子时，翅膀对子不能使用飞机本身的牌点
         for (int rank : sortedRanks(byRank)) {
             if (!sequence.contains(rank) && byRank.get(rank).size() >= 2) {
                 pairRanks.add(rank);
@@ -361,6 +379,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     }
 
     private static Map<Integer, Integer> countRanks(List<Card> cards) {
+        //统计每个点数出现的次数，供牌型判断使用
         Map<Integer, Integer> counts = new HashMap<>();
         for (Card card : cards) {
             counts.put(card.getRankValue(), counts.getOrDefault(card.getRankValue(), 0) + 1);
@@ -369,6 +388,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     }
 
     private static Map<Integer, ArrayList<Card>> groupByRank(List<Card> cards) {
+        //按点数分组，供电脑寻找可出牌使用
         Map<Integer, ArrayList<Card>> byRank = new HashMap<>();
         for (Card card : cards) {
             byRank.computeIfAbsent(card.getRankValue(), key -> new ArrayList<>()).add(card);
@@ -424,6 +444,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
 
     private static CardPattern judgePlane(Map<Integer, Integer> counts, int size) {
         ArrayList<Integer> tripleRanks = new ArrayList<>();
+        //飞机的主体必须是连续的三张，2不能参与飞机
         for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
             if (entry.getKey() < 15 && entry.getValue() >= 3) {
                 tripleRanks.add(entry.getKey());
@@ -431,6 +452,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
         }
         Collections.sort(tripleRanks);
 
+        //优先尝试最长的飞机主体，避免多组三张时误取短飞机
         for (int length = tripleRanks.size(); length >= 2; length--) {
             for (int startIndex = 0; startIndex <= tripleRanks.size() - length; startIndex++) {
                 ArrayList<Integer> sequence = new ArrayList<>();
@@ -442,12 +464,15 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
                 }
 
                 int mainRank = sequence.get(sequence.size() - 1);
+                //纯飞机：333444
                 if (size == length * 3) {
                     return new CardPattern(CardPattern.Type.PLANE, mainRank, length, size);
                 }
+                //飞机带单牌：33344456
                 if (size == length * 4 && hasEnoughSingleWings(counts, sequence, length)) {
                     return new CardPattern(CardPattern.Type.PLANE_WITH_SINGLE, mainRank, length, size);
                 }
+                //飞机带对子：3334445566
                 if (size == length * 5 && hasEnoughPairWings(counts, sequence, length)) {
                     return new CardPattern(CardPattern.Type.PLANE_WITH_PAIR, mainRank, length, size);
                 }
@@ -472,6 +497,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     }
 
     private static ArrayList<Card> findKicker(ArrayList<Card> hand, HashSet<Integer> excludedRanks, int count) {
+        //从小牌开始找附带牌，尽量保留大牌
         ArrayList<Card> result = new ArrayList<>();
         for (Card card : hand) {
             if (!excludedRanks.contains(card.getRankValue())) {
@@ -486,6 +512,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
 
     private static boolean hasEnoughSingleWings(Map<Integer, Integer> counts, ArrayList<Integer> tripleRanks, int neededCount) {
         int count = 0;
+        //扣除飞机主体后，剩余牌数量足够即可带单牌
         for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
             int rank = entry.getKey();
             int cardCount = entry.getValue();
@@ -499,6 +526,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
 
     private static boolean hasEnoughPairWings(Map<Integer, Integer> counts, ArrayList<Integer> tripleRanks, int neededPairCount) {
         int count = 0;
+        //扣除飞机主体后，剩余牌按对子数量计算
         for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
             int rank = entry.getKey();
             int cardCount = entry.getValue();
@@ -521,6 +549,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
     }
 
     private static ArrayList<Integer> findRankSequence(ArrayList<Integer> ranks, int length, int minMainRank) {
+        //寻找一段长度相同且最大点数更大的连续点数组
         for (int startIndex = 0; startIndex <= ranks.size() - length; startIndex++) {
             ArrayList<Integer> sequence = new ArrayList<>();
             for (int i = 0; i < length; i++) {

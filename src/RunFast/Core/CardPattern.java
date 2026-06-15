@@ -1,6 +1,7 @@
 package RunFast.Core;
 
 public class CardPattern { //牌型对象，保存一手牌的类型、主牌大小和长度信息
+    //此枚举的目的是统一管理跑得快中支持的所有牌型
     public enum Type {
         INVALID,
         SINGLE,
@@ -17,11 +18,12 @@ public class CardPattern { //牌型对象，保存一手牌的类型、主牌大
         FOUR_WITH_TWO
     }
 
-    private final Type type;
-    private final int mainRank;
-    private final int length;
-    private final int cardCount;
+    private final Type type;        //牌型类型
+    private final int mainRank;     //主牌点数，用于比较大小
+    private final int length;       //连续牌型长度，例如顺子长度、连对长度、飞机长度
+    private final int cardCount;    //当前牌型总张数
 
+    //此构造方法的目的是创建不可变牌型结果
     public CardPattern(Type type, int mainRank, int length, int cardCount) {
         this.type = type;
         this.mainRank = mainRank;
@@ -29,14 +31,17 @@ public class CardPattern { //牌型对象，保存一手牌的类型、主牌大
         this.cardCount = cardCount;
     }
 
+    //此方法的目的是创建无效牌型对象
     public static CardPattern invalid(int cardCount) {
         return new CardPattern(Type.INVALID, 0, 0, cardCount);
     }
 
+    //此方法的目的是判断当前牌型是否有效
     public boolean isValid() {
         return type != Type.INVALID;
     }
 
+    //此方法的目的是判断当前牌型是否为炸弹
     public boolean isBomb() {
         return type == Type.BOMB;
     }
@@ -57,6 +62,7 @@ public class CardPattern { //牌型对象，保存一手牌的类型、主牌大
         return cardCount;
     }
 
+    //此方法的目的是获取牌型中文显示名称
     public String getDisplayName() {
         switch (type) {
             case SINGLE:
