@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.net.URL;
 
 public class Card extends JLabel { //基础牌单位，包含花色、数字、牌值和图片显示
     private String m_Number;
@@ -85,13 +86,13 @@ public class Card extends JLabel { //基础牌单位，包含花色、数字、�
 
     //此方法的目的是显示牌的正面图片
     public void turnFront() {
-        setIcon(new ImageIcon(getFrontImagePath()));
+        setIcon(loadCardIcon(m_Color + "-" + m_Number + "-" + m_Value + ".png"));
         front = true;
     }
 
     //此方法的目的是显示牌的背面图片
     public void turnRear() {
-        setIcon(new ImageIcon("src" + File.separator + "image" + File.separator + "poker" + File.separator + "rear.png"));
+        setIcon(loadCardIcon("rear.png"));
         front = false;
     }
 
@@ -114,6 +115,15 @@ public class Card extends JLabel { //基础牌单位，包含花色、数字、�
     public String getFrontImagePath() {
         return "src" + File.separator + "image" + File.separator + "poker" + File.separator
                 + m_Color + "-" + m_Number + "-" + m_Value + ".png";
+    }
+
+    //此方法的目的是从jar内部或项目目录中加载扑克牌图片
+    private ImageIcon loadCardIcon(String fileName) {
+        URL resource = Card.class.getResource("/image/poker/" + fileName);
+        if (resource != null) {
+            return new ImageIcon(resource);
+        }
+        return new ImageIcon("src" + File.separator + "image" + File.separator + "poker" + File.separator + fileName);
     }
 
     public String getm_Number() {

@@ -74,9 +74,9 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
             playerInfo[i].setFont(new Font("SansSerif", Font.BOLD, 14));
             container.add(playerInfo[i]);
         }
-        playerInfo[0].setBounds(30, 70, 140, 28);
+        playerInfo[0].setBounds(30, 70, 140, 44);
         playerInfo[1].setBounds(395, 560, 140, 28);
-        playerInfo[2].setBounds(760, 70, 140, 28);
+        playerInfo[2].setBounds(760, 70, 140, 44);
 
         playButton.setBounds(350, 475, 90, 30);
         passButton.setBounds(490, 475, 90, 30);
