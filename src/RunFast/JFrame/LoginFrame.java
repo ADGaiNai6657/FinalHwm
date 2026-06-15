@@ -1,7 +1,6 @@
 package RunFast.JFrame;
 
 import RunFast.Core.PockerGame;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -22,33 +21,37 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.security.SecureRandom;
 
-public class LoginFrame extends JFrame {
-    private static final String PASSWORD = "123456";
-    private static final String CAPTCHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static final SecureRandom RANDOM = new SecureRandom();
+public class LoginFrame extends JFrame { //登录窗口，负责玩家账号、密码与验证码验证
+    private static final String PASSWORD = "123456";      //默认登录密码
+    private static final String CAPTCHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"; //验证码字符范围
+    private static final SecureRandom RANDOM = new SecureRandom();      //随机数对象，用于生成验证码
 
-    private final JTextField accountField;
-    private final JPasswordField passwordField;
-    private final JTextField captchaField;
-    private final JLabel captchaLabel;
-    private String captchaCode;
+    private final JTextField accountField;                //账号输入框
+    private final JPasswordField passwordField;           //密码输入框
+    private final JTextField captchaField;                //验证码输入框
+    private final JLabel captchaLabel;                    //验证码显示区域
+    private String captchaCode;                           //当前验证码
 
+    //此构造方法的目的是创建登录界面并绑定登录按钮与回车事件
     public LoginFrame() {
         accountField = new JTextField();
         passwordField = new JPasswordField();
         captchaField = new JTextField();
         captchaLabel = new JLabel("", SwingConstants.CENTER);
 
+        //登录窗口基础设置
         setTitle("RunFast Login");
         setSize(420, 310);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
+        //主面板样式设置
         JPanel rootPanel = new JPanel(new BorderLayout());
         rootPanel.setBackground(new Color(245, 247, 250));
         rootPanel.setBorder(new EmptyBorder(24, 32, 28, 32));
 
+        //标题区域
         JLabel titleLabel = new JLabel("RunFast", SwingConstants.CENTER);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 28));
         titleLabel.setForeground(new Color(42, 55, 75));
@@ -66,15 +69,18 @@ public class LoginFrame extends JFrame {
         formPanel.setOpaque(false);
         formPanel.setBorder(new EmptyBorder(22, 0, 18, 0));
 
+        //输入框与验证码样式设置
         configureInput(accountField);
         configureInput(passwordField);
         configureInput(captchaField);
         configureCaptchaLabel();
 
+        //账号、密码、验证码输入区域
         addFormRow(formPanel, 0, "Account", accountField);
         addFormRow(formPanel, 1, "Password", passwordField);
         addCaptchaRow(formPanel);
 
+        //登录按钮，点击或回车后进行登录验证
         JButton loginButton = new JButton("Login");
         loginButton.setFont(new Font("SansSerif", Font.BOLD, 15));
         loginButton.setForeground(Color.WHITE);
@@ -83,6 +89,7 @@ public class LoginFrame extends JFrame {
         loginButton.setBorder(BorderFactory.createEmptyBorder(10, 18, 10, 18));
         loginButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         loginButton.addActionListener(e -> login());
+        getRootPane().setDefaultButton(loginButton);
 
         rootPanel.add(headerPanel, BorderLayout.NORTH);
         rootPanel.add(formPanel, BorderLayout.CENTER);
@@ -92,6 +99,7 @@ public class LoginFrame extends JFrame {
         refreshCaptcha();
     }
 
+    //此方法的目的是向表单中添加普通输入行
     private void addFormRow(JPanel panel, int row, String labelText, JTextField field) {
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.gridx = 0;
@@ -114,6 +122,7 @@ public class LoginFrame extends JFrame {
         panel.add(field, fieldConstraints);
     }
 
+    //此方法的目的是向表单中添加验证码输入行与验证码显示区域
     private void addCaptchaRow(JPanel panel) {
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.gridx = 0;
@@ -141,6 +150,7 @@ public class LoginFrame extends JFrame {
         panel.add(captchaLabel, captchaConstraints);
     }
 
+    //此方法的目的是统一设置输入框样式
     private void configureInput(JTextField field) {
         field.setPreferredSize(new Dimension(210, 36));
         field.setFont(new Font("SansSerif", Font.PLAIN, 14));
@@ -152,6 +162,7 @@ public class LoginFrame extends JFrame {
         ));
     }
 
+    //此方法的目的是设置验证码显示区域样式并绑定点击刷新事件
     private void configureCaptchaLabel() {
         captchaLabel.setPreferredSize(new Dimension(82, 36));
         captchaLabel.setFont(new Font("Monospaced", Font.BOLD, 18));
@@ -169,6 +180,7 @@ public class LoginFrame extends JFrame {
         });
     }
 
+    //此方法的目的是随机生成四位验证码并显示在界面右侧
     private void refreshCaptcha() {
         StringBuilder builder = new StringBuilder(4);
         for (int i = 0; i < 4; i++) {
@@ -178,17 +190,20 @@ public class LoginFrame extends JFrame {
         captchaLabel.setText(captchaCode);
     }
 
+    //此方法的目的是验证账号、密码和验证码，验证成功后进入游戏
     private void login() {
         String account = accountField.getText().trim();
         String password = new String(passwordField.getPassword());
         String captcha = captchaField.getText().trim();
 
+        //账号不能为空
         if (account.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please enter account.", "Login Failed", JOptionPane.ERROR_MESSAGE);
             accountField.requestFocus();
             return;
         }
 
+        //密码错误时清空密码并刷新验证码
         if (!PASSWORD.equals(password)) {
             JOptionPane.showMessageDialog(this, "Password error.", "Login Failed", JOptionPane.ERROR_MESSAGE);
             passwordField.setText("");
@@ -197,6 +212,7 @@ public class LoginFrame extends JFrame {
             return;
         }
 
+        //验证码错误时清空验证码并刷新验证码
         if (!captchaCode.equals(captcha)) {
             JOptionPane.showMessageDialog(this, "Captcha error.", "Login Failed", JOptionPane.ERROR_MESSAGE);
             captchaField.setText("");
@@ -206,6 +222,6 @@ public class LoginFrame extends JFrame {
         }
 
         dispose();
-        new PockerGame();   //flag
+        new PockerGame();   //进入游戏
     }
 }
