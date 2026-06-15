@@ -49,9 +49,14 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             return new CardPattern(CardPattern.Type.TRIPLE_WITH_PAIR, rankWithCount(counts, 3), 1, size);
         }
 
-        //四带二：四张相同牌点带任意两张单牌
+        //四带二：四张相同牌点带两张单牌
         if (size == 6 && hasCount(counts, 4)) {
             return new CardPattern(CardPattern.Type.FOUR_WITH_TWO, rankWithCount(counts, 4), 1, size);
+        }
+
+        //四带两对：四张相同牌点带两个对子
+        if (size == 8 && hasCount(counts, 4) && hasEnoughPairKickers(counts, rankWithCount(counts, 4), 2)) {
+            return new CardPattern(CardPattern.Type.FOUR_WITH_TWO, rankWithCount(counts, 4), 2, size);
         }
 
         //飞机和飞机带翅膀需要优先于顺子、连对判断
@@ -183,6 +188,11 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             case PLANE_WITH_PAIR:
                 return findPlaneWithPair(hand, lastPattern.getLength(), lastPattern.getMainRank());
             case FOUR_WITH_TWO:
+                //上一手是8张时，说明是四带两对，需要寻找相同张数的牌型
+                if (lastPattern.getCardCount() == 8) {
+                    return findFourWithTwoPairs(hand, lastPattern.getMainRank());
+                }
+                //上一手是6张时，说明是四带两张单牌
                 return findFourWithTwo(hand, lastPattern.getMainRank());
             case BOMB:
                 return findBombAbove(hand, lastPattern.getMainRank());
@@ -360,7 +370,7 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
         return new ArrayList<>();
     }
 
-    //此方法的目的是寻找四带二
+    //此方法的目的是寻找四带二，四张主体带两张单牌
     private static ArrayList<Card> findFourWithTwo(ArrayList<Card> hand, int minRank) {
         Map<Integer, ArrayList<Card>> byRank = groupByRank(hand);
         for (int rank : sortedRanks(byRank)) {
@@ -368,10 +378,37 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
             if (rank <= minRank || cards.size() < 4) {
                 continue;
             }
+            //附带牌不能从四张主体中拆出
             ArrayList<Card> kickers = findKicker(hand, new HashSet<>(Collections.singletonList(rank)), 2);
             if (kickers.size() == 2) {
                 ArrayList<Card> result = new ArrayList<>(cards.subList(0, 4));
                 result.addAll(kickers);
+                return result;
+            }
+        }
+        return new ArrayList<>();
+    }
+
+    //此方法的目的是寻找四带两对
+    private static ArrayList<Card> findFourWithTwoPairs(ArrayList<Card> hand, int minRank) {
+        Map<Integer, ArrayList<Card>> byRank = groupByRank(hand);
+        for (int rank : sortedRanks(byRank)) {
+            ArrayList<Card> cards = byRank.get(rank);
+            if (rank <= minRank || cards.size() < 4) {
+                continue;
+            }
+
+            ArrayList<Integer> pairRanks = new ArrayList<>();
+            //寻找两个不属于四张主体的对子作为附带牌
+            for (int pairRank : sortedRanks(byRank)) {
+                if (pairRank != rank && byRank.get(pairRank).size() >= 2) {
+                    pairRanks.add(pairRank);
+                }
+            }
+            if (pairRanks.size() >= 2) {
+                ArrayList<Card> result = new ArrayList<>(cards.subList(0, 4));
+                result.addAll(byRank.get(pairRanks.get(0)).subList(0, 2));
+                result.addAll(byRank.get(pairRanks.get(1)).subList(0, 2));
                 return result;
             }
         }
@@ -534,6 +571,17 @@ public class Judge { //牌型判断工具类，负责识别牌型、比较大小
                 cardCount -= 3;
             }
             count += Math.max(0, cardCount) / 2;
+        }
+        return count >= neededPairCount;
+    }
+
+    private static boolean hasEnoughPairKickers(Map<Integer, Integer> counts, int excludedRank, int neededPairCount) {
+        int count = 0;
+        //四带两对判断时，四张主体不能再被当作附带对子
+        for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+            if (entry.getKey() != excludedRank) {
+                count += entry.getValue() / 2;
+            }
         }
         return count >= neededPairCount;
     }
