@@ -1,6 +1,8 @@
 package RunFast.JFrame;
 
 import RunFast.Core.Card;
+import RunFast.Core.CardPattern;
+import RunFast.Core.Judge;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -14,9 +16,7 @@ import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发牌、出牌和界面显示
@@ -77,7 +77,7 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
 
         playButton.setBounds(350, 475, 90, 30);
         passButton.setBounds(490, 475, 90, 30);
-        restartButton.setBounds(790, 590, 110, 32);
+        restartButton.setBounds(790, 475, 110, 32);
 
         playButton.addActionListener(e -> playSelectedCards());
         passButton.addActionListener(e -> passTurn());
@@ -237,8 +237,9 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
             return;
         }
 
-        if (!isValidGroup(selectedCards)) {
-            JOptionPane.showMessageDialog(this, "当前只支持单张、对子、三张和炸弹。", "提示", JOptionPane.WARNING_MESSAGE);
+        CardPattern pattern = Judge.judge(selectedCards);
+        if (!pattern.isValid()) {
+            JOptionPane.showMessageDialog(this, "当前牌型不合法。", "提示", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -263,36 +264,12 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
         return selectedCards;
     }
 
-    //此方法的目的是判断一组牌是否为当前支持的合法牌型
-    private boolean isValidGroup(List<Card> cards) {
-        if (cards.isEmpty() || cards.size() > 4) {
-            return false;
-        }
-
-        int rank = cards.get(0).getRankValue();
-        for (Card card : cards) {
-            if (card.getRankValue() != rank) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     //此方法的目的是判断当前出牌能否压过上一手牌
     private boolean canBeatLastCards(List<Card> cards) {
         if (lastCards.isEmpty() || lastPlayer == turn || passCount >= 2) {
-            return true;
+            return Judge.judge(cards).isValid();
         }
-
-        boolean currentBomb = cards.size() == 4;
-        boolean lastBomb = lastCards.size() == 4;
-        if (currentBomb && !lastBomb) {
-            return true;
-        }
-        if (currentBomb != lastBomb) {
-            return false;
-        }
-        return cards.size() == lastCards.size() && cards.get(0).getRankValue() > lastCards.get(0).getRankValue();
+        return Judge.canBeat(cards, lastCards);
     }
 
     //此方法的目的是把一名玩家出的牌放到桌面中央
@@ -316,6 +293,10 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
         }
         if (lastCards.isEmpty() || lastPlayer == 1) {
             JOptionPane.showMessageDialog(this, "当前你有牌权，不能不要。", "提示", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (Judge.hasPlayableCards(playerList.get(1), lastCards)) {
+            JOptionPane.showMessageDialog(this, "你有可以压过上一手的牌，跑得快规则下不能不要。", "提示", JOptionPane.WARNING_MESSAGE);
             return;
         }
         passCount++;
@@ -374,7 +355,8 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
             return;
         }
 
-        ArrayList<Card> cards = findComputerCards(playerList.get(turn));
+        ArrayList<Card> cards = Judge.findSmallestBeat(playerList.get(turn), lastCards,
+                lastCards.isEmpty() || lastPlayer == turn || passCount >= 2);
         if (cards.isEmpty()) {
             passCount++;
             statusLabel.setText(playerName(turn) + " 不要");
@@ -390,41 +372,6 @@ public class GameJFrame extends JFrame { //游戏主窗口，负责跑得快发�
             renderTable();
             computerTurnLater();
         }
-    }
-
-    //此方法的目的是给电脑寻找一组能出的最小牌
-    private ArrayList<Card> findComputerCards(ArrayList<Card> cards) {
-        orderCards(cards);
-        Map<Integer, ArrayList<Card>> byRank = new HashMap<>();
-        for (Card card : cards) {
-            byRank.computeIfAbsent(card.getRankValue(), key -> new ArrayList<>()).add(card);
-        }
-
-        int targetCount = lastCards.isEmpty() || lastPlayer == turn || passCount >= 2 ? 1 : lastCards.size();
-        int targetRank = lastCards.isEmpty() ? 0 : lastCards.get(0).getRankValue();
-        boolean targetBomb = !lastCards.isEmpty() && lastCards.size() == 4;
-
-        ArrayList<Integer> ranks = new ArrayList<>(byRank.keySet());
-        Collections.sort(ranks);
-        for (int rank : ranks) {
-            ArrayList<Card> sameRankCards = byRank.get(rank);
-            if (sameRankCards.size() >= targetCount && (lastCards.isEmpty() || lastPlayer == turn || passCount >= 2 || rank > targetRank)) {
-                if (!targetBomb || targetCount == 4) {
-                    return new ArrayList<>(sameRankCards.subList(0, targetCount));
-                }
-            }
-        }
-
-        if (!targetBomb) {
-            for (int rank : ranks) {
-                ArrayList<Card> sameRankCards = byRank.get(rank);
-                if (sameRankCards.size() == 4) {
-                    return new ArrayList<>(sameRankCards);
-                }
-            }
-        }
-
-        return new ArrayList<>();
     }
 
     //此方法的目的是检查是否已经有玩家出完手牌
